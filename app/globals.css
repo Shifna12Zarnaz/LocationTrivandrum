@@ -1,0 +1,20 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+
+@font-face {
+  font-family: 'OMEGLE';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/OmegleRegular.woff') format('woff'),
+       url('https://fonts.cdnfonts.com/s/46051/OmegleRegular-gxDaq.woff') format('woff');
+}
+
+.font-omegle {
+  font-family: var(--font-omegle), 'OMEGLE', sans-serif !important;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+body { background: #F6F0E6; color: #202020; }
+:focus-visible { outline: 2px solid #C4945D; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+.no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { scrollbar-width: none; }
