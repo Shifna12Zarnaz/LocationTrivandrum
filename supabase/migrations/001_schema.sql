@@ -17,7 +17,7 @@ create table public.restaurant_settings (
   id smallint primary key default 1 check (id = 1),
   name text not null default 'Location Restaurant',
   tagline text, logo_key text, favicon_key text, story text, phone text, whatsapp text,
-  address text, hours text, instagram text, maps_url text, seo_description text,
+  address text, hours text, instagram text, maps_url text, google_review_url text, seo_description text,
   timezone text not null default 'Asia/Dubai', currency text not null default '',
   allow_multiple_specials boolean not null default false,
   show_offers_nav boolean not null default true, show_story_nav boolean not null default true, show_contact_nav boolean not null default true,

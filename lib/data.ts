@@ -1,8 +1,6 @@
 import { unstable_cache } from "next/cache";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasSupabase, publicClient } from "./supabase/clients";
+import { firebaseDb } from "./firebase/firestore";
 import { imgUrl } from "./img-url";
-import { hhmmInTz, todayInTz } from "./time";
 import { sampleHome } from "./sample-data";
 import type { Category, Dish, HomeData, Offer, Settings, Slide, Special } from "./types";
 
@@ -10,13 +8,12 @@ import type { Category, Dish, HomeData, Offer, Settings, Slide, Special } from "
 export type Raw = { settings: any; categories: any[]; items: any[]; offers: any[]; slides: any[]; specials: any[] };
 
 /** 6 parallel queries, no N+1. drafts=true (admin preview) skips active/published filters; RLS still decides what is visible. */
-export async function fetchRaw(sb: SupabaseClient, drafts: boolean): Promise<Raw> {
-  const since = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10);
+export async function fetchRaw(sb: any, drafts: boolean): Promise<Raw> {
   let cat = sb.from("categories").select("id,name,slug,description,sort_order").is("archived_at", null).order("sort_order");
   let it = sb.from("menu_items").select("*").is("archived_at", null).order("sort_order");
   let of = sb.from("offers").select("*").order("sort_order");
   let sl = sb.from("hero_slides").select("*").order("sort_order");
-  let sp = sb.from("daily_specials").select("*").gte("special_date", since).order("sort_order");
+  let sp = sb.from("daily_specials").select("*").order("sort_order");
   if (!drafts) { cat = cat.eq("is_active", true); of = of.eq("is_active", true); sl = sl.eq("is_active", true); sp = sp.eq("is_active", true); }
   const [s, c, i, o, h, p] = await Promise.all([sb.from("restaurant_settings").select("*").eq("id", 1).maybeSingle(), cat, it, of, sl, sp]);
   for (const r of [s, c, i, o, h, p]) if (r.error) throw new Error(`DB: ${r.error.message}`);
@@ -38,7 +35,7 @@ export function shape(raw: Raw, preview = false, now = new Date()): HomeData {
   const settings: Settings = {
     name: st.name || "Location Restaurant", tagline: st.tagline || "", logo: imgUrl(st.logo_key, 400), favicon: imgUrl(st.favicon_key, 64),
     story: st.story || "", phone: st.phone || "", whatsapp: st.whatsapp || "", address: st.address || "", hours: st.hours || "",
-    instagram: st.instagram || "", mapsUrl: st.maps_url || "", seoDescription: st.seo_description || "", timezone: st.timezone || "Asia/Dubai",
+    instagram: st.instagram || "", mapsUrl: st.maps_url || "", googleReviewUrl: st.google_review_url || "", feedbackUrl: st.feedback_url || "", seoDescription: st.seo_description || "", timezone: st.timezone || "Asia/Dubai",
     currency: (st.currency === "AED" ? "" : (st.currency || "")), multiSpecials: !!st.allow_multiple_specials,
     navOffers: st.show_offers_nav !== false, navStory: st.show_story_nav !== false, navContact: st.show_contact_nav !== false,
   };
@@ -51,9 +48,8 @@ export function shape(raw: Raw, preview = false, now = new Date()): HomeData {
   const byId = new Map(dishAll.map((d) => [d.id, d]));
 
   // Specials: restaurant-timezone date + optional time window.
-  const today = todayInTz(settings.timezone, now), hm = hhmmInTz(settings.timezone, now);
   let specials: Special[] = raw.specials
-    .filter((s) => preview || (s.special_date === today && (!s.start_time || s.start_time.slice(0, 5) <= hm) && (!s.end_time || hm < s.end_time.slice(0, 5))))
+    .filter((s) => preview || s.is_active !== false)
     .map((s) => ({ dish: byId.get(s.item_id)!, promo: s.promo_text || undefined })).filter((s) => s.dish);
   // Show every active special configured for today.
   const specialIds = new Set(specials.map((s) => s.dish.id));
@@ -78,10 +74,9 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
   }
 }
 // If this still throws during background revalidation, Next keeps serving the last good page.
-const cachedRaw = unstable_cache(() => withRetry(() => fetchRaw(publicClient(), false)), ["public-raw"], { tags: ["menu"], revalidate: 60 });
+const cachedRaw = unstable_cache(() => withRetry(() => fetchRaw(firebaseDb, false)), ["public-raw"], { tags: ["menu"], revalidate: 60 });
 
 /** Public read path: cached 60s, invalidated by tag "menu" on any admin change. */
 export async function getPublicHome(): Promise<HomeData> {
-  if (!hasSupabase()) return sampleHome();
-  return shape(await cachedRaw());
+  try { return shape(await cachedRaw()); } catch { return sampleHome(); }
 }

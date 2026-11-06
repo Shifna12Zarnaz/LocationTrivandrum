@@ -1,9 +1,11 @@
 "use server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getAdmin } from "./auth";
 import { RESOURCES, IMAGE_COLUMNS, type Resource } from "./resources";
-import { serverClient, serviceClient } from "../supabase/clients";
+import { firebaseAdminAuth } from "../firebase/admin";
+import { firebaseDb } from "../firebase/firestore";
 import { copyObject, deleteObject } from "../r2";
 import { validTz, zonedToUtcISO } from "../time";
 
@@ -205,23 +207,22 @@ export async function cleanupImages(): Promise<R> {
 
 /* ---- accounts ---- */
 export async function signIn(_: unknown, fd: FormData) {
-  const sb = await serverClient();
-  const { error } = await sb.auth.signInWithPassword({ email: String(fd.get("email") || "").trim(), password: String(fd.get("password") || "") });
-  if (error) return { error: "Email or password is wrong." };
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: String(fd.get("email") || "").trim(), password: String(fd.get("password") || ""), returnSecureToken: true }) });
+  if (!response.ok) return { error: "Email or password is wrong." };
+  const result = await response.json();
+  (await cookies()).set("firebase_token", result.idToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 3600 });
   redirect("/admin");
 }
-export async function signOut() { const sb = await serverClient(); await sb.auth.signOut(); redirect("/admin/login"); }
+export async function signOut() { (await cookies()).delete("firebase_token"); redirect("/admin/login"); }
 
 export async function createAdmin(email: string, password: string, role: "admin" | "owner"): Promise<R> {
   try {
     const a = await need(); if (a.role !== "owner") return { ok: false, error: "Only the owner can add administrators." };
     if (!/^\S+@\S+\.\S+$/.test(email)) return { ok: false, error: "Enter a valid email." };
     if (password.length < 10) return { ok: false, error: "Password needs at least 10 characters." };
-    const svc = serviceClient();
-    const { data, error } = await svc.auth.admin.createUser({ email, password, email_confirm: true });
-    if (error || !data.user) return { ok: false, error: error?.message.includes("already") ? "That email already has an account." : "Could not create the account." };
-    const { error: e2 } = await svc.from("admins").insert({ user_id: data.user.id, email, role });
-    if (e2) { await svc.auth.admin.deleteUser(data.user.id); return { ok: false, error: "Could not grant access." }; }
+    const user = await firebaseAdminAuth().createUser({ email, password, emailVerified: true });
+    const { error: e2 } = await firebaseDb.from("admins").insert({ id: user.uid, email, role, created_at: new Date().toISOString() });
+    if (e2) { await firebaseAdminAuth().deleteUser(user.uid); return { ok: false, error: "Could not grant access." }; }
     revalidatePath("/admin/access"); return { ok: true, message: "Administrator added. Share the password privately." };
   } catch (e) { return fail(e); }
 }
@@ -229,7 +230,8 @@ export async function removeAdmin(userId: string): Promise<R> {
   try {
     const a = await need(); if (a.role !== "owner") return { ok: false, error: "Only the owner can remove administrators." };
     if (a.user.id === userId) return { ok: false, error: "You cannot remove yourself." };
-    const { error } = await serviceClient().from("admins").delete().eq("user_id", userId); if (error) return { ok: false, error: "Could not remove." };
+    const { error } = await firebaseDb.from("admins").delete().eq("id", userId); if (error) return { ok: false, error: "Could not remove." };
+    await firebaseAdminAuth().deleteUser(userId);
     revalidatePath("/admin/access"); return { ok: true, message: "Access removed." };
   } catch (e) { return fail(e); }
 }

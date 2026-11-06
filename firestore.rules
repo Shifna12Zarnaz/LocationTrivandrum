@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Public menu collections are filtered by the application for published content.
+    match /restaurant_settings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /categories/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /menu_items/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /daily_specials/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /offers/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /hero_slides/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /images/{id} { allow read, write: if isAdmin(); }
+    match /admins/{id} { allow read: if isAdmin() && (id == request.auth.uid || isAdmin()); allow write: if isAdmin(); }
+  }
+}

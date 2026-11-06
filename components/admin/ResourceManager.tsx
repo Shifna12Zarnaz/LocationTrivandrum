@@ -48,6 +48,7 @@ export default function ResourceManager({ resource: R, rows, options, imgBase, t
         <h1 className="font-serif text-3xl">{mode === "quick" ? "Bestsellers" : R.title}</h1>
         {!mode && <button onClick={() => setEdit("new")} className="h-11 bg-oak px-5 text-sm font-medium">Add {R.singular}</button>}
       </div>
+      {mode === "quick" && <p className="mt-2 text-sm text-charcoal/70">All active menu items are shown. Select “Bestseller” on any item to feature it on the customer menu.</p>}
       <Banner m={msg} />
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <input aria-label="Search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} className={`${inputCls} basis-44 flex-1`} />

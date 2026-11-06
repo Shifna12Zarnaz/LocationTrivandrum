@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAdmin } from "@/lib/admin/auth";
-import { hasSupabase } from "@/lib/supabase/clients";
+import { hasFirebaseClientConfig } from "@/lib/firebase/client";
 import { signOut } from "@/lib/admin/actions";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-const nav = [["Dashboard", "/admin"], ["Menu items", "/admin/menu-items"], ["Categories", "/admin/categories"], ["Bestsellers", "/admin/bestsellers"], ["Today's specials", "/admin/specials"], ["Offers", "/admin/offers"], ["Hero slider", "/admin/hero-slides"], ["Settings", "/admin/settings"], ["Administrators", "/admin/access"]];
+const nav = [["Dashboard", "/admin"], ["Menu items", "/admin/menu-items"], ["Categories", "/admin/categories"], ["Bestsellers", "/admin/bestsellers"], ["Today's specials", "/admin/specials"], ["Offers", "/admin/offers"], ["Hero slider", "/admin/hero-slides"], ["Table QR", "/admin/qr"], ["Settings", "/admin/settings"], ["Administrators", "/admin/access"]];
 
 export default async function Panel({ children }: { children: React.ReactNode }) {
-  if (!hasSupabase()) return <main className="p-8"><h1 className="font-serif text-3xl">Setup needed</h1><p className="mt-2">Add the Supabase variables from .env.example, then reload.</p></main>;
+  if (!hasFirebaseClientConfig()) return <main className="p-8"><h1 className="font-serif text-3xl">Setup needed</h1><p className="mt-2">Add the Firebase variables from .env.example, then reload.</p></main>;
   const a = await getAdmin();
   if (!a) return <main className="p-8"><h1 className="font-serif text-3xl">No access</h1><p className="mt-2">This account is not an administrator.</p><form action={signOut} className="mt-4"><button className="h-11 border border-brass px-5">Sign out</button></form></main>;
   return (

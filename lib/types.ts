@@ -9,7 +9,7 @@ export type Slide = { id: string; heading: string; subtitle: string; cta: string
 export type Offer = { id: string; title: string; text: string; label?: string; terms?: string; href: string; image?: string | null; tone: number };
 export type Settings = {
   name: string; tagline: string; logo: string | null; favicon: string | null; story: string; phone: string; whatsapp: string; address: string; hours: string;
-  instagram: string; mapsUrl: string; seoDescription: string; timezone: string; currency: string; multiSpecials: boolean;
+  instagram: string; mapsUrl: string; googleReviewUrl: string; feedbackUrl: string; seoDescription: string; timezone: string; currency: string; multiSpecials: boolean;
   navOffers: boolean; navStory: boolean; navContact: boolean;
 };
 export type Special = { dish: Dish; promo?: string };

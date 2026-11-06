@@ -102,6 +102,8 @@ export const RESOURCES: Record<string, Resource> = {
       { name: "phone", label: "Phone", type: "text", half: true }, { name: "whatsapp", label: "WhatsApp number", type: "text", half: true },
       { name: "address", label: "Address", type: "textarea" }, { name: "hours", label: "Opening hours", type: "textarea" },
       { name: "instagram", label: "Instagram link", type: "text", half: true }, { name: "maps_url", label: "Google Maps link", type: "text", half: true },
+      { name: "google_review_url", label: "Google review link", type: "text", placeholder: "https://g.page/r/.../review", help: "Guests are sent here after submitting feedback.", half: true },
+      { name: "feedback_url", label: "Private feedback form link", type: "text", placeholder: "https://forms.google.com/...", help: "Optional. Add a Google Form or feedback page for private comments.", half: true },
       { name: "seo_description", label: "Search engine description", type: "textarea" },
       { name: "timezone", label: "Timezone", type: "text", required: true, validate: "timezone", default: "Asia/Dubai", half: true, help: "Example: Asia/Dubai. Controls offers and specials timing." },
       { name: "currency", label: "Currency symbol (leave blank for none)", type: "text", default: "", half: true },

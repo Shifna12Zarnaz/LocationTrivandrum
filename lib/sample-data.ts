@@ -1,4 +1,4 @@
-// SAMPLE DATA. Not verified restaurant information. Replaced by Supabase in phase 2.
+// SAMPLE DATA used when Firebase is unavailable during local development.
 import type { Category, Dish, HomeData, Offer, Slide } from "./types";
 
 export const categories: Category[] = [
@@ -39,7 +39,7 @@ export const offers: Offer[] = [
 ];
 
 export const sampleHome = (): HomeData => ({
-  settings: { name: "Location Restaurant", tagline: "European finesse. Arabic soul.", logo: null, favicon: null, story: "", phone: "", whatsapp: "", address: "", hours: "", instagram: "", mapsUrl: "", seoDescription: "", timezone: "Asia/Dubai", currency: "", multiSpecials: false, navOffers: true, navStory: false, navContact: false },
+  settings: { name: "Location Restaurant", tagline: "European finesse. Arabic soul.", logo: null, favicon: null, story: "", phone: "", whatsapp: "", address: "", hours: "", instagram: "", mapsUrl: "", googleReviewUrl: "", feedbackUrl: "", seoDescription: "", timezone: "Asia/Dubai", currency: "", multiSpecials: false, navOffers: true, navStory: false, navContact: false },
   slides, offers, categories, dishes, specials: dishes.filter((x) => x.special).map((dish) => ({ dish })),
 });
 export const site = { name: "LOCATION RESTAURANT", tagline: "European finesse. Arabic soul.", currency: "" };
